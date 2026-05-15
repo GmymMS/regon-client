@@ -6,7 +6,7 @@ import { RegonApiError, RegonNotFoundError } from "./errors.js";
 
 const xmlParser = new XMLParser({ ignoreAttributes: false, parseTagValue: true });
 
-export function extractResult<T>(soapXml: string, resultTag: string): T {
+export function extractResult(soapXml: string, resultTag: string): unknown {
   const parsed = xmlParser.parse(soapXml) as Record<string, unknown>;
   const body = getNestedValue(parsed, ["Envelope", "Body"]) as Record<string, unknown> | undefined;
   if (!body) throw new RegonApiError("Malformed SOAP response: missing Body");
@@ -14,16 +14,12 @@ export function extractResult<T>(soapXml: string, resultTag: string): T {
   const fault = getNestedValue(body, ["Fault"]);
   if (fault) {
     const reason = getNestedValue(fault as Record<string, unknown>, ["Reason", "Text"]);
-    const reasonText =
-      reason !== null && typeof reason === "object"
-        ? ((reason as Record<string, unknown>)["#text"] ?? JSON.stringify(reason))
-        : reason;
-    throw new RegonApiError(`SOAP fault: ${String(reasonText ?? fault)}`);
+    throw new RegonApiError("SOAP fault: " + toFaultString(reason ?? fault));
   }
 
   const result = findKey(body, resultTag);
-  if (result === undefined) throw new RegonApiError(`Missing ${resultTag} in response`);
-  return result as T;
+  if (result === undefined) throw new RegonApiError("Missing " + resultTag + " in response");
+  return result;
 }
 
 export function parseEntityList(xml: string): EntitySummary[] {
@@ -43,19 +39,19 @@ export function parseEntityList(xml: string): EntitySummary[] {
 function mapEntityRow(row: unknown): EntitySummary {
   const r = row as Record<string, unknown>;
   return {
-    regon: String(r["Regon"] ?? ""),
-    nip: String(r["Nip"] ?? ""),
-    statusNip: String(r["StatusNip"] ?? ""),
-    name: String(r["Nazwa"] ?? ""),
-    voivodeship: String(r["Wojewodztwo"] ?? ""),
-    county: String(r["Powiat"] ?? ""),
-    commune: String(r["Gmina"] ?? ""),
-    city: String(r["Miejscowosc"] ?? ""),
-    postalCode: String(r["KodPocztowy"] ?? ""),
-    street: String(r["Ulica"] ?? ""),
-    buildingNumber: String(r["NrNieruchomosci"] ?? ""),
-    apartmentNumber: String(r["NrLokalu"] ?? ""),
-    type: String(r["Typ"] ?? "P") as EntityType,
+    regon: toStr(r["Regon"]),
+    nip: toStr(r["Nip"]),
+    statusNip: toStr(r["StatusNip"]),
+    name: toStr(r["Nazwa"]),
+    voivodeship: toStr(r["Wojewodztwo"]),
+    county: toStr(r["Powiat"]),
+    commune: toStr(r["Gmina"]),
+    city: toStr(r["Miejscowosc"]),
+    postalCode: toStr(r["KodPocztowy"]),
+    street: toStr(r["Ulica"]),
+    buildingNumber: toStr(r["NrNieruchomosci"]),
+    apartmentNumber: toStr(r["NrLokalu"]),
+    type: toStr(r["Typ"] ?? "P") as EntityType,
     silosId: Number(r["SilosID"] ?? 6) as SilosId,
   };
 }
@@ -68,8 +64,23 @@ export function parseReport(xml: string): Record<string, string> {
   if (!root) throw new RegonNotFoundError("Report not found");
 
   return Object.fromEntries(
-    Object.entries(root).map(([k, v]) => [k, String(v ?? "")])
+    Object.entries(root).map(([k, v]) => [k, toStr(v)])
   );
+}
+
+function toStr(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+
+function toFaultString(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (v !== null && typeof v === "object") {
+    const text = (v as Record<string, unknown>)["#text"];
+    if (typeof text === "string") return text;
+  }
+  return "unknown fault";
 }
 
 function getNestedValue(obj: Record<string, unknown>, keys: string[]): unknown {

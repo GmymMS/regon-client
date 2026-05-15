@@ -7,13 +7,21 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        project: "./tsconfig.eslint.json",
+        projectService: {
+          allowDefaultProject: ["tests/*.ts"],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/explicit-function-return-type": "warn",
+    },
+  },
+  {
+    files: ["tests/**/*.ts"],
+    rules: {
+      "@typescript-eslint/explicit-function-return-type": "off",
     },
   },
   {

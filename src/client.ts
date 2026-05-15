@@ -61,7 +61,7 @@ export class RegonClient {
         sid,
         this.timeoutMs
       );
-      const result = extractResult<string>(xml, "DanePobierzPelnyRaportResult");
+      const result = extractResult(xml, "DanePobierzPelnyRaportResult") as string;
       return parseReport(result);
     });
   }
@@ -85,7 +85,7 @@ export class RegonClient {
         sid,
         this.timeoutMs
       );
-      return extractResult<string>(xml, "GetValueResult");
+      return extractResult(xml, "GetValueResult") as string;
     });
   }
 
@@ -112,7 +112,7 @@ export class RegonClient {
         sid,
         this.timeoutMs
       );
-      const result = extractResult<string>(xml, "DaneSzukajPodmiotyResult");
+      const result = extractResult(xml, "DaneSzukajPodmiotyResult") as string;
       return parseEntityList(result);
     });
   }

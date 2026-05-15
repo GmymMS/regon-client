@@ -38,9 +38,9 @@ export async function callSoap(
       signal: controller.signal,
     });
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      throw new Error("HTTP " + String(res.status) + ": " + res.statusText);
     }
-    return res.text();
+    return await res.text();
   } finally {
     clearTimeout(timer);
   }

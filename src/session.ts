@@ -8,7 +8,7 @@ const LOGOUT_ACTION = "http://CIS/BIR/PUBL/2014/07/IUslugaBIRzewnPubl/Wyloguj";
 export async function login(url: string, apiKey: string, timeoutMs: number): Promise<string> {
   const body = `<ns:Zaloguj><ns:pKluczUzytkownika>${apiKey}</ns:pKluczUzytkownika></ns:Zaloguj>`;
   const xml = await callSoap(url, LOGIN_ACTION, body, undefined, timeoutMs);
-  const sessionId = extractResult<string>(xml, "ZalogujResult");
+  const sessionId = extractResult(xml, "ZalogujResult") as string;
   if (!sessionId || sessionId.trim() === "00000000-0000-0000-0000-000000000000") {
     throw new RegonAuthError("Login failed — invalid API key or service unavailable");
   }

@@ -92,7 +92,7 @@ describe("RegonClient", () => {
 
   describe("searchByNips", () => {
     it("throws if more than 20 NIPs provided", async () => {
-      const nips = Array(21).fill("5260250216");
+      const nips: string[] = Array(21).fill("5260250216") as string[];
       await expect(client.searchByNips(nips)).rejects.toThrow(/max 20/);
     });
 
