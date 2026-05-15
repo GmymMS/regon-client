@@ -22,11 +22,12 @@ export const ServiceParam = {
 
 export type ServiceParam = (typeof ServiceParam)[keyof typeof ServiceParam];
 
+// GUS BIR1.1 silosId codes: 1=CEIDG, 2=Agricultural, 3=Other, 4=CivilPartnership, 6=LegalEntity, 7=LocalNatural, 8=LocalLegal
 export const SILOS_TO_REPORT: Record<SilosId, ReportType> = {
-  1: ReportType.CIVIL_PARTNERSHIP,
-  2: ReportType.NATURAL_PERSON_CEIDG,
-  3: ReportType.NATURAL_PERSON_AGRICULTURAL,
-  4: ReportType.NATURAL_PERSON_OTHER,
+  1: ReportType.NATURAL_PERSON_CEIDG,
+  2: ReportType.NATURAL_PERSON_AGRICULTURAL,
+  3: ReportType.NATURAL_PERSON_OTHER,
+  4: ReportType.CIVIL_PARTNERSHIP,
   6: ReportType.LEGAL_ENTITY,
   7: ReportType.LOCAL_UNIT_NATURAL,
   8: ReportType.LOCAL_UNIT_LEGAL,

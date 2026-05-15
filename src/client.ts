@@ -12,6 +12,8 @@ const ENDPOINTS = {
 } as const;
 
 const BIR_ACTION_BASE = "http://CIS/BIR/PUBL/2014/07/IUslugaBIRzewnPubl";
+// ParametryWyszukiwania fields are in the DataContract namespace per GUS BIR WSDL
+const DC_NS = "http://CIS/BIR/PUBL/2014/07/DataContract";
 
 export class RegonClient {
   private readonly url: string;
@@ -27,24 +29,24 @@ export class RegonClient {
 
   async searchByNip(nip: string): Promise<EntitySummary[]> {
     const clean = validateNip(nip);
-    return this.search(`<ns:Nip>${clean}</ns:Nip>`);
+    return this.search(`<dc:Nip xmlns:dc="${DC_NS}">${clean}</dc:Nip>`);
   }
 
   async searchByNips(nips: string[]): Promise<EntitySummary[]> {
     if (nips.length === 0) return [];
     if (nips.length > 20) throw new Error("searchByNips: max 20 NIPs per call");
     const cleaned = nips.map((n) => validateNip(n));
-    return this.search(`<ns:Nipy>${cleaned.join(",")}</ns:Nipy>`);
+    return this.search(`<dc:Nipy xmlns:dc="${DC_NS}">${cleaned.join(",")}</dc:Nipy>`);
   }
 
   async searchByRegon(regon: string): Promise<EntitySummary[]> {
     const clean = validateRegon(regon);
-    const tag = clean.length === 9 ? "ns:Regony9zn" : "ns:Regony14zn";
-    return this.search(`<${tag}>${clean}</${tag}>`);
+    const tag = clean.length === 9 ? "Regony9zn" : "Regony14zn";
+    return this.search(`<dc:${tag} xmlns:dc="${DC_NS}">${clean}</dc:${tag}>`);
   }
 
   async searchByKrs(krs: string): Promise<EntitySummary[]> {
-    return this.search(`<ns:Krs>${krs}</ns:Krs>`);
+    return this.search(`<dc:Krs xmlns:dc="${DC_NS}">${krs}</dc:Krs>`);
   }
 
   async getFullReport(regon: string, reportType: ReportType): Promise<Record<string, string>> {
@@ -101,7 +103,7 @@ export class RegonClient {
     return this.session.withSession(async (sid) => {
       const body =
         `<ns:DaneSzukajPodmioty>` +
-        `<ns:pParametryWyszukiwania xmlns:ns1="http://CIS/BIR/PUBL/2014/07">` +
+        `<ns:pParametryWyszukiwania>` +
         paramXml +
         `</ns:pParametryWyszukiwania>` +
         `</ns:DaneSzukajPodmioty>`;

@@ -1,23 +1,26 @@
 import { describe, it, expect, vi } from "vitest";
 import { buildEnvelope, callSoap } from "../src/soap.js";
 
+const ACTION = "http://CIS/BIR/PUBL/2014/07/IUslugaBIRzewnPubl/Zaloguj";
+const URL = "https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzewnPubl.svc";
+
 describe("buildEnvelope", () => {
-  it("builds envelope without session header", () => {
-    const env = buildEnvelope("<ns:Zaloguj/>");
-    expect(env).toContain("<soap:Header/>");
+  it("includes WS-Addressing Action and To headers", () => {
+    const env = buildEnvelope("<ns:Zaloguj/>", ACTION, URL);
+    expect(env).toContain("http://www.w3.org/2005/08/addressing");
+    expect(env).toContain(ACTION);
+    expect(env).toContain(URL);
     expect(env).toContain("<ns:Zaloguj/>");
     expect(env).toContain("soap-envelope");
   });
 
-  it("builds envelope with session header", () => {
-    const env = buildEnvelope("<ns:GetValue/>", "test-session-id");
-    expect(env).toContain("<ns:sid");
-    expect(env).toContain("test-session-id");
-    expect(env).not.toContain("<soap:Header/>");
+  it("does not include session id in SOAP envelope (sid goes in HTTP header)", () => {
+    const env = buildEnvelope("<ns:GetValue/>", ACTION, URL);
+    expect(env).not.toContain("sid");
   });
 
   it("is valid XML structure", () => {
-    const env = buildEnvelope("<ns:body/>", "sid-123");
+    const env = buildEnvelope("<ns:body/>", ACTION, URL);
     expect(env).toMatch(/^<\?xml version="1\.0"/);
     expect(env).toContain("<soap:Envelope");
     expect(env).toContain("</soap:Envelope>");
@@ -35,16 +38,44 @@ describe("callSoap", () => {
       text: () => Promise.resolve(""),
     }));
     await expect(
-      callSoap("https://test.pl", "action", "<body/>", undefined, 5_000)
+      callSoap("https://test.pl", ACTION, "<body/>", undefined, 5_000)
     ).rejects.toThrow("HTTP 503");
   });
 
-  it("resolves with response text on success", async () => {
+  it("passes sid as HTTP header when session provided", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve("<s:Envelope><s:Body><Result>ok</Result></s:Body></s:Envelope>"),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+    await callSoap("https://test.pl", ACTION, "<body/>", "my-session-id", 5_000);
+    const headers = mockFetch.mock.calls[0][1].headers;
+    expect(headers["sid"]).toBe("my-session-id");
+  });
+
+  it("resolves with plain XML response", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
-      text: () => Promise.resolve("<response/>"),
+      text: () => Promise.resolve("<s:Envelope><s:Body><Result>ok</Result></s:Body></s:Envelope>"),
     }));
-    const result = await callSoap("https://test.pl", "action", "<body/>", "sid", 5_000);
-    expect(result).toBe("<response/>");
+    const result = await callSoap("https://test.pl", ACTION, "<body/>", "sid", 5_000);
+    expect(result).toContain("<Result>ok</Result>");
+  });
+
+  it("strips MTOM multipart wrapper and returns inner XML", async () => {
+    const mtomBody = [
+      "--uuid:test-boundary",
+      'Content-Type: application/xop+xml;charset=utf-8;type="application/soap+xml"',
+      "",
+      '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"><s:Body><Result>ok</Result></s:Body></s:Envelope>',
+      "--uuid:test-boundary--",
+    ].join("\n");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(mtomBody),
+    }));
+    const result = await callSoap("https://test.pl", ACTION, "<body/>", "sid", 5_000);
+    expect(result).toContain("<Result>ok</Result>");
+    expect(result).not.toContain("uuid:test-boundary");
   });
 });

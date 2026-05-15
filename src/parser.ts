@@ -39,7 +39,7 @@ export function parseEntityList(xml: string): EntitySummary[] {
 function mapEntityRow(row: unknown): EntitySummary {
   const r = row as Record<string, unknown>;
   return {
-    regon: toStr(r["Regon"]),
+    regon: toStr(r["Regon"]).padStart(9, "0"),
     nip: toStr(r["Nip"]),
     statusNip: toStr(r["StatusNip"]),
     name: toStr(r["Nazwa"]),
