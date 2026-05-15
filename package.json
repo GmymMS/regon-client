@@ -1,6 +1,6 @@
 {
   "name": "@gmymms/regon-client",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "TypeScript client for GUS BIR1.1 REGON API — company lookup by NIP, REGON, KRS",
   "keywords": [
     "gus",
