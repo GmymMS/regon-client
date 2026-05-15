@@ -86,7 +86,7 @@ describe("RegonClient", () => {
     });
 
     it("throws RegonValidationError for invalid NIP", async () => {
-      await expect(client.searchByNip("0000000000")).rejects.toThrow(RegonValidationError);
+      await expect(client.searchByNip("1234567890")).rejects.toThrow(RegonValidationError);
     });
   });
 

@@ -14,7 +14,11 @@ export function extractResult<T>(soapXml: string, resultTag: string): T {
   const fault = getNestedValue(body, ["Fault"]);
   if (fault) {
     const reason = getNestedValue(fault as Record<string, unknown>, ["Reason", "Text"]);
-    throw new RegonApiError(`SOAP fault: ${String(reason ?? fault)}`);
+    const reasonText =
+      reason !== null && typeof reason === "object"
+        ? ((reason as Record<string, unknown>)["#text"] ?? JSON.stringify(reason))
+        : reason;
+    throw new RegonApiError(`SOAP fault: ${String(reasonText ?? fault)}`);
   }
 
   const result = findKey(body, resultTag);

@@ -51,11 +51,11 @@ describe("validateRegon (9-digit)", () => {
 
 describe("validateRegon (14-digit)", () => {
   it("accepts valid 14-digit REGON", () => {
-    expect(validateRegon("14239685800000")).toBe("14239685800000");
+    expect(validateRegon("14239685800002")).toBe("14239685800002");
   });
 
   it("throws on invalid 14-digit checksum", () => {
-    expect(() => validateRegon("14239685800001")).toThrow(RegonValidationError);
+    expect(() => validateRegon("14239685800003")).toThrow(RegonValidationError);
   });
 
   it("throws if base 9 digits are invalid", () => {
