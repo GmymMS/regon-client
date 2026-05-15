@@ -1,8 +1,15 @@
 {
   "name": "@gmymms/regon-client",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "TypeScript client for GUS BIR1.1 REGON API — company lookup by NIP, REGON, KRS",
-  "keywords": ["gus", "bir", "regon", "nip", "poland", "company-lookup"],
+  "keywords": [
+    "gus",
+    "bir",
+    "regon",
+    "nip",
+    "poland",
+    "company-lookup"
+  ],
   "homepage": "https://github.com/GmymMS/regon-client#readme",
   "bugs": "https://github.com/GmymMS/regon-client/issues",
   "repository": {
@@ -22,7 +29,9 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
