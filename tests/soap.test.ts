@@ -43,14 +43,16 @@ describe("callSoap", () => {
   });
 
   it("passes sid as HTTP header when session provided", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      text: () => Promise.resolve("<s:Envelope><s:Body><Result>ok</Result></s:Body></s:Envelope>"),
-    });
-    vi.stubGlobal("fetch", mockFetch);
+    let capturedHeaders: Record<string, string> = {};
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((_url: string, init: RequestInit) => {
+      capturedHeaders = init.headers as Record<string, string>;
+      return Promise.resolve({
+        ok: true,
+        text: () => Promise.resolve("<s:Envelope><s:Body><Result>ok</Result></s:Body></s:Envelope>"),
+      });
+    }));
     await callSoap("https://test.pl", ACTION, "<body/>", "my-session-id", 5_000);
-    const headers = mockFetch.mock.calls[0][1].headers;
-    expect(headers["sid"]).toBe("my-session-id");
+    expect(capturedHeaders["sid"]).toBe("my-session-id");
   });
 
   it("resolves with plain XML response", async () => {
