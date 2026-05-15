@@ -1,0 +1,16 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  security:
+    uses: MaciekStrzelbicki/github-shared-workflows/.github/workflows/security-scan.yml@main
+    with:
+      run-trivy-container: false

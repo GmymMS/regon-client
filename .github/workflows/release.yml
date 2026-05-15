@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-type:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options: [patch, minor, major]
+      dry-run:
+        description: "Dry run (skip publish and git push)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    name: Bump version and publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@gmymms"
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Bump version
+        id: version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          npm version ${{ inputs.version-type }} --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit and tag
+        if: ${{ !inputs.dry-run }}
+        run: |
+          git add package.json package-lock.json
+          git commit -m "chore: release v${{ steps.version.outputs.version }}"
+          git tag "v${{ steps.version.outputs.version }}"
+          git push --follow-tags
+
+      - name: Publish to GitHub Packages
+        if: ${{ !inputs.dry-run }}
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry-run }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.version.outputs.version }}"
+          generate_release_notes: true
+          token: ${{ secrets.GITHUB_TOKEN }}
