@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validateNip, validateRegon } from "../src/validator.js";
-import { RegonValidationError } from "../src/errors.js";
+import { RegonValidationError, RegonRateLimitError } from "../src/errors.js";
 
 describe("validateNip", () => {
   it("accepts valid NIP", () => {
@@ -44,6 +44,10 @@ describe("validateRegon (9-digit)", () => {
     expect(() => validateRegon("142396859")).toThrow(RegonValidationError);
   });
 
+  it("throws on non-digit characters in 9-char input", () => {
+    expect(() => validateRegon("12345678X")).toThrow(RegonValidationError);
+  });
+
   it("throws on wrong length", () => {
     expect(() => validateRegon("12345678")).toThrow(RegonValidationError);
   });
@@ -62,6 +66,10 @@ describe("validateRegon (14-digit)", () => {
     expect(() => validateRegon("99999999900000")).toThrow(RegonValidationError);
   });
 
+  it("throws on non-digit characters in 14-char input", () => {
+    expect(() => validateRegon("1423968580000X")).toThrow(RegonValidationError);
+  });
+
   it("error has correct field", () => {
     try {
       validateRegon("00000000000000");
@@ -69,5 +77,18 @@ describe("validateRegon (14-digit)", () => {
       expect(e).toBeInstanceOf(RegonValidationError);
       expect((e as RegonValidationError).field).toBe("regon");
     }
+  });
+});
+
+describe("RegonRateLimitError", () => {
+  it("stores retryAfterMs when provided", () => {
+    const err = new RegonRateLimitError("rate limited", 5_000);
+    expect(err.retryAfterMs).toBe(5_000);
+    expect(err.message).toBe("rate limited");
+  });
+
+  it("retryAfterMs is undefined when not provided", () => {
+    const err = new RegonRateLimitError("rate limited");
+    expect(err.retryAfterMs).toBeUndefined();
   });
 });

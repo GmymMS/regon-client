@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { buildEnvelope } from "../src/soap.js";
+import { describe, it, expect, vi } from "vitest";
+import { buildEnvelope, callSoap } from "../src/soap.js";
 
 describe("buildEnvelope", () => {
   it("builds envelope without session header", () => {
@@ -23,5 +23,28 @@ describe("buildEnvelope", () => {
     expect(env).toContain("</soap:Envelope>");
     expect(env).toContain("<soap:Body>");
     expect(env).toContain("</soap:Body>");
+  });
+});
+
+describe("callSoap", () => {
+  it("throws on non-2xx HTTP response", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      statusText: "Service Unavailable",
+      text: () => Promise.resolve(""),
+    }));
+    await expect(
+      callSoap("https://test.pl", "action", "<body/>", undefined, 5_000)
+    ).rejects.toThrow("HTTP 503");
+  });
+
+  it("resolves with response text on success", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve("<response/>"),
+    }));
+    const result = await callSoap("https://test.pl", "action", "<body/>", "sid", 5_000);
+    expect(result).toBe("<response/>");
   });
 });

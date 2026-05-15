@@ -85,7 +85,7 @@ export class RegonClient {
         sid,
         this.timeoutMs
       );
-      return extractResult(xml, "GetValueResult") as string;
+      return String(extractResult(xml, "GetValueResult"));
     });
   }
 
